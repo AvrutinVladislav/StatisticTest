@@ -2,7 +2,11 @@ import UIKit
 
 class PeriodeButton: UIButton {
     
-    var isSelectedButton: Bool = false
+    var isSelectedButton: Bool = false {
+        didSet {
+            setupStyle(title: self.title)
+        }
+    }
     var onTap: (() -> Void)?
     
     private var title = ""
@@ -14,6 +18,7 @@ class PeriodeButton: UIButton {
         self.title = title
         super.init(frame: frame)
         setupStyle(title: self.title)
+        addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
     }
     
     required init?(coder: NSCoder) {
@@ -34,12 +39,9 @@ class PeriodeButton: UIButton {
         titleAtr.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
         config.attributedTitle = AttributedString(title, attributes: titleAtr)
         configuration = config
-        
-        addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
     }
     
     @objc private func buttonTapped() {
-        isSelectedButton.toggle()
         onTap?()
     }
 }

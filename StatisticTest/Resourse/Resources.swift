@@ -1,5 +1,4 @@
 import Foundation
-
 import UIKit
 
 enum ObserversDescription: String, CaseIterable {
@@ -9,10 +8,12 @@ enum ObserversDescription: String, CaseIterable {
     case lowVisitors = "Количество посетителей в этом месяце уменьшилось"
 }
 
-enum Colors {
+enum Colors: CaseIterable {
     static let mainBackground = Colors.color(light: .init(hex: .mainBackground), dark: .init(hex: .mainBackground))
     static let tabbarBorder = Colors.color(light: .init(hex: .tabbarBorder), dark: .init(hex: .tabbarBorder))
     static let selectedPeriodeButton = Colors.color(light: .init(hex: .selectedPeriodeButton), dark: .init(hex: .selectedPeriodeButton))
+    static let woman = Colors.color(light: .init(hex: .woman), dark: .init(hex: .woman))
+    static let devaider = Colors.color(light: .init(hex: .devaider), dark: .init(hex: .devaider))
     
     static func color(light: UIColor, dark: UIColor) -> UIColor {
         
@@ -29,6 +30,8 @@ extension UIColor {
         case mainBackground = "F6F6F6"
         case tabbarBorder = "E9E9EA"
         case selectedPeriodeButton = "FF2E00"
+        case woman = "F99963"
+        case devaider = "EFEFEF"
     }
     
     convenience init(hex: Hex) {

@@ -2,11 +2,7 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-final class NetworkManager {
-    
-    static let shared = NetworkManager()
-    
-    private init() {}
+final class NetworkProvider: NetworkProviderProtocol {
         
     func fetchUsers() -> Observable<[User]> {
         guard let url = URL(string: "http://test.rikmasters.ru/api/users/") else {

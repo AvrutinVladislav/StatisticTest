@@ -1,47 +1,70 @@
 import Foundation
+import RealmSwift
 
 //http://test.rikmasters.ru/api/statistics/
 
 struct StatisticsResponse: Codable {
-    let statistics: [UserStatistic]
+    var statistics: [UserStatistic]
+}
+
+class StatisticsResponseDBObject: Object {
+    @Persisted var statistics: List<UserStatisticDBObject>
+    
+    convenience init(from response: StatisticsResponse) {
+        self.init()
+        self.statistics.append(objectsIn: response.statistics.map { UserStatisticDBObject(from: $0) })
+    }
 }
 
 struct UserStatistic: Codable {
-    let userId: Int
-    let type: StatisticType
-    let dates: [Date]
+    var userId: Int
+    var type: StatisticType
+    var dates: [Int]
     
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case type
         case dates
     }
+}
+
+enum StatisticType: String, Codable, PersistableEnum {
+    case view = "view"
+    case subscription = "subscription"
+    case unsubscription = "unsubscription"
     
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        userId = try container.decode(Int.self, forKey: .userId)
-        type = try container.decode(StatisticType.self, forKey: .type)
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
         
-        let dateInts = try container.decode([Int].self, forKey: .dates)
-        dates = dateInts.map { intDate in
-            // Конвертация Int в Date (нужно уточнить формат даты)
-            // Предполагаем формат DDMMYYYY
-            let day = intDate / 1000000
-            let month = (intDate / 10000) % 100
-            let year = intDate % 10000
-            
-            var components = DateComponents()
-            components.day = day
-            components.month = month
-            components.year = year
-            
-            return Calendar.current.date(from: components) ?? Date()
+        switch rawValue {
+        case "view": self = .view
+        case "subscription": self = .subscription
+        case "unsubscription": self = .unsubscription
+        default: self = .view
         }
     }
 }
 
-enum StatisticType: String, Codable {
-    case view = "view"
-    case subscription = "subscription"
-    case unsubscription = "unsubscription"
+class UserStatisticDBObject: Object {
+    @Persisted(primaryKey: true) var id: String = UUID().uuidString
+    @Persisted var userId: Int
+    @Persisted var type: StatisticType
+    @Persisted var dates: List<Int>
+    
+    convenience init(from statistic: UserStatistic) {
+        self.init()
+        self.userId = statistic.userId
+        self.type = statistic.type
+        self.dates.append(objectsIn: statistic.dates)
+    }
+    
+    func getStatistics() -> UserStatistic {
+        return UserStatistic(
+            userId: userId,
+            type: type,
+            dates: Array(dates)
+        )
+    }
+    
 }

@@ -18,8 +18,8 @@ final class MainVisitorsTableViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configureCell(model: User) {
-        if let url = model.files.first?.url {
+    func configureCell(model: MainVisitor) {
+        if let url = model.avatarImg {
             getAvatarFromURL(urlString: url) { [weak self] image in
                 guard let image else {
                     print("Error to load avatar")
@@ -27,8 +27,10 @@ final class MainVisitorsTableViewCell: UITableViewCell {
                 }
                 self?.avatarImageView.image = image
             }
+        } else {
+            print("==== Error to load avatar url string ====")
         }
-        visitorNameLabel.text = "\(model.username), \(model.age)"
+        visitorNameLabel.text = "\(model.name), \(model.visitsCount)"
         rightArrowButton.setImage(UIImage(systemName: "chevron.right"), for: .normal)
     }
 }
