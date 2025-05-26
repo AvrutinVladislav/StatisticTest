@@ -53,7 +53,7 @@ final class Repository: RepositoryProtocol {
         let realm = try realmProvider.getRealm()
         try realm.write {
             statistics.forEach { statistic in
-                if let existigStatistic = realm.object(ofType: UserStatisticDBObject.self, forPrimaryKey: statistic.userId) {
+                if let existigStatistic = realm.object(ofType: UserStatisticDBObject.self, forPrimaryKey: statistic.id) {
                     existigStatistic.type = statistic.type
                     existigStatistic.dates.removeAll()
                     existigStatistic.dates.append(objectsIn: statistic.dates)
@@ -89,15 +89,16 @@ final class Repository: RepositoryProtocol {
         guard localStatistics.count == remoteStatistics.count else {
             return true
         }
-        let localDict = Dictionary(uniqueKeysWithValues: localStatistics.map { ($0.userId, $0) })
+        let localDict = Dictionary(uniqueKeysWithValues: localStatistics.map { ($0.id, $0) })
         for remoteStatistic in remoteStatistics {
-            guard let localStatistic = localDict[remoteStatistic.userId] else {
+            guard let localStatistic = localDict[remoteStatistic.id] else {
                 return true
             }
             
             if localStatistic.dates != remoteStatistic.dates ||
                 localStatistic.type != remoteStatistic.type ||
-                localStatistic.userId != remoteStatistic.userId {
+                localStatistic.userId != remoteStatistic.userId ||
+                localStatistic.id != remoteStatistic.id {
                 return true
             }
         }

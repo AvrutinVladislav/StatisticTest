@@ -75,25 +75,25 @@ extension StatisticViewController {
     func loadData() {
         isLoading.accept(true)
         fetchUsers()
-
-        networkProvider.fetchStatistics()
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onNext: { [weak self] statistic in
-                    guard let self else { return }
-                    self.statistic.accept(statistic.statistics)
-                    let mainVisitors = self.prepareMainVisitersData()
-                    self.mainVisitors.accept(mainVisitors)
-                    let data = self.processVisitorsData(statistic)
-                    self.visitorsStatistic.accept(data)
-                    self.isLoading.accept(false)
-                },
-                onError: { [weak self] error in
-                    self?.error.onNext(error)
-                    self?.isLoading.accept(false)
-                }
-            )
-            .disposed(by: disposeBag)
+        fetchStatistic()
+//        networkProvider.fetchStatistics()
+//            .observe(on: MainScheduler.instance)
+//            .subscribe(
+//                onNext: { [weak self] statistic in
+//                    guard let self else { return }
+//                    self.statistic.accept(statistic.statistics)
+//                    let mainVisitors = self.prepareMainVisitersData()
+//                    self.mainVisitors.accept(mainVisitors)
+//                    let data = self.processVisitorsData(statistic)
+//                    self.visitorsStatistic.accept(data)
+//                    self.isLoading.accept(false)
+//                },
+//                onError: { [weak self] error in
+//                    self?.error.onNext(error)
+//                    self?.isLoading.accept(false)
+//                }
+//            )
+//            .disposed(by: disposeBag)
     }
     
     func groupByAgeAndGender(users: [User]) -> [AgeGroupStats] {
@@ -122,7 +122,7 @@ extension StatisticViewController {
         return GenderCounter(maleCount: totalMale, femaleCount: totalFemale)
     }
     
-    func processVisitorsData(_ response: StatisticsResponse) -> [VisitorsStatistic] {
+    func processVisitorsData(_ data: [UserStatistic]) -> [VisitorsStatistic] {
 //        let allViewDates = response.statistics
 //            .filter { $0.type.rawValue == "view" }
 //            .flatMap { $0.dates }
@@ -136,7 +136,7 @@ extension StatisticViewController {
 //        return dateCounts
 //            .sorted { $0.key < $1.key}
 //            .map {VisitorsStatistic(date: $0.key, visitorsCount: $0.value)}
-           let allViewDates = response.statistics
+           let allViewDates = data
                .filter { $0.type.rawValue == "view" }
                .flatMap { $0.dates }
            let dates = allViewDates.compactMap { parseDate(from: $0) }
@@ -174,20 +174,19 @@ extension StatisticViewController {
     }
     
     func fetchUsers() {
-        isLoading.accept(true)
         var localUsers: [User] = []
         do {
             localUsers = try self.repository.getLocalUsers()
             print("===== \(localUsers.count) users download from Realm")
         } catch {
-            
+            print("==== Error get local users: \(error.localizedDescription)")
         }
         self.networkProvider.fetchUsers()
             .observe(on: MainScheduler.instance)
             .subscribe { [weak self] remoteUsers in
                 guard let self else { return }
                 if localUsers.isEmpty {
-                    self.updateUI(with: remoteUsers)
+                    self.updateUserData(with: remoteUsers)
                     do {
                         try self.repository.saveUsers(remoteUsers)
                     } catch {
@@ -195,9 +194,9 @@ extension StatisticViewController {
                     }
                 } else {
                     if self.repository.hasChanges(localUsers: localUsers, remoteUsers: remoteUsers) {
-                        self.updateUI(with: localUsers)
+                        self.updateUserData(with: localUsers)
                     } else {
-                        self.updateUI(with: remoteUsers)
+                        self.updateUserData(with: remoteUsers)
                         do {
                             try self.repository.updateUsers(remoteUsers)
                         } catch {
@@ -205,11 +204,11 @@ extension StatisticViewController {
                         }
                     }
                 }
-            }.disposed(by: disposeBag)
-        
+            }
+            .disposed(by: disposeBag)
     }
     
-    private func updateUI(with users: [User]) {
+    private func updateUserData(with users: [User]) {
         self.users.accept(users)
         let grouped = self.groupByAgeAndGender(users: users)
         self.ageGenderStatistic.onNext(grouped)
@@ -218,19 +217,54 @@ extension StatisticViewController {
         self.isLoading.accept(false)
     }
     
-    private func saveAndUpdateUI(with users: [User]) {
+    func fetchStatistic() {
+        var localStatistic = [UserStatistic]()
         do {
-            try self.repository.saveUsers(users)
-            self.updateUI(with: users)
+            localStatistic = try repository.getLocalStatistic()
+            print("===== \(localStatistic.count) statistics download from Realm")
         } catch {
-            self.error.onNext(error)
-            self.isLoading.accept(false)
+            print("==== Error get local statistic: \(error.localizedDescription)")
         }
+        networkProvider.fetchStatistics()
+            .observe(on: MainScheduler.instance)
+            .subscribe {[weak self] remoteStatistic in
+                guard let self else { return }
+                if localStatistic.isEmpty {
+                    self.updateStatisticData(with: remoteStatistic)
+                    do {
+                        try repository.saveStatistic(remoteStatistic)
+                    } catch {
+                        print("==== Error to save statistic to Realm: \(error.localizedDescription)")
+                    }
+                } else {
+                    if self.repository.hasChangesStatistic(localStatistics: localStatistic, remoteStatistics: remoteStatistic) {
+                        self.updateStatisticData(with: localStatistic)
+                    } else {
+                        self.updateStatisticData(with: remoteStatistic)
+                        do {
+                            try repository.updateStatistic(remoteStatistic)
+                        } catch {
+                            print("==== Error to update statistic to Realm: \(error.localizedDescription)")
+                        }
+                    }
+                }
+                
+            }
+            .disposed(by: disposeBag)
     }
     
-    func prepareMainVisitersData() -> [MainVisitor] {
+    func updateStatisticData(with statistic: [UserStatistic]) {
+        self.statistic.accept(statistic)
+        let mainVisitors = self.prepareMainVisitersData(with: statistic)
+        self.mainVisitors.accept(mainVisitors)
+        let data = self.processVisitorsData(statistic)
+        self.visitorsStatistic.accept(data)
+        self.isLoading.accept(false)
+    }
+    
+    func prepareMainVisitersData(with statistic: [UserStatistic]) -> [MainVisitor] {
         var mainVisitors = [MainVisitor]()
-        statistic.value.forEach { statistic in
+        statistic.forEach { statistic in
             if statistic.type == .view {
                 users.value.forEach { user in
                     if user.id == statistic.userId {

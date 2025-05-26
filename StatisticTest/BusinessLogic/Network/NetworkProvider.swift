@@ -20,14 +20,15 @@ final class NetworkProvider: NetworkProviderProtocol {
             }
     }
     
-    func fetchStatistics() -> Observable<StatisticsResponse> {
+    func fetchStatistics() -> Observable<[UserStatistic]> {
         guard let url = URL(string: "http://test.rikmasters.ru/api/statistics/") else {
             return Observable.error(NSError(domain: "Invalid URL", code: -1))
         }
         return URLSession.shared.rx.data(request: URLRequest(url: url))
-            .map { data -> StatisticsResponse in
+            .map { data -> [UserStatistic] in
                 do {
-                    return try JSONDecoder().decode(StatisticsResponse.self, from: data)
+                    let response = try JSONDecoder().decode(StatisticsResponse.self, from: data)
+                    return response.statistics
                 } catch {
                     throw error
                 }
