@@ -20,7 +20,7 @@ final class StatisticView: UIView {
     private let dayPeriodButton = PeriodeButton(isSelected: true, title: "По дням")
     private let weekPeriodButton = PeriodeButton(isSelected: false, title: "По неделям")
     private let monthPeriodButton = PeriodeButton(isSelected: false, title: "По месяцам")
-    private let graphView = VisitorsGraphView()
+    private let visitorsGraphView = VisitorsGraphView()
     private let mainVisitorsTitleLabel = UILabel()
     private let mainVisitorsTableView = UITableView()
     
@@ -80,7 +80,7 @@ final class StatisticView: UIView {
             .disposed(by: disposeBag)
         
         visitorStatistic
-            .bind(to: graphView.statistic)
+            .bind(to: visitorsGraphView.statistic)
             .disposed(by: disposeBag)
         
         for view in [visitorsInfoView, newObserversView, lessObserversview] {
@@ -156,7 +156,7 @@ extension StatisticView {
         contentView.addSubview(visitorsLabel)
         contentView.addSubview(visitorsInfoView)
         contentView.addSubview(periodStackView)
-        contentView.addSubview(graphView)
+        contentView.addSubview(visitorsGraphView)
         contentView.addSubview(mainVisitorsTitleLabel)
         contentView.addSubview(mainVisitorsTableView)
         contentView.addSubview(sexAndAgeTitleLabel)
@@ -201,14 +201,14 @@ extension StatisticView {
             .horizontally(16)
             .height(32)
         
-        graphView.pin
+        visitorsGraphView.pin
             .below(of: periodStackView)
             .marginTop(12)
             .horizontally(16)
             .height(210)
         
         mainVisitorsTitleLabel.pin
-            .below(of: graphView)
+            .below(of: visitorsGraphView)
             .marginTop(28)
             .horizontally(16)
             .height(24)
@@ -293,6 +293,16 @@ extension StatisticView {
                 button.isSelectedButton = true
                 button.onTap = { [weak self] in
                     
+                }
+                switch sender {
+                case dayPeriodButton:
+                    visitorsGraphView.visitorsPeriod = .days
+                case weekPeriodButton:
+                    visitorsGraphView.visitorsPeriod = .weeks
+                case monthPeriodButton:
+                    visitorsGraphView.visitorsPeriod = .month
+                default:
+                    break
                 }
             } else {
                 button.isSelectedButton = false

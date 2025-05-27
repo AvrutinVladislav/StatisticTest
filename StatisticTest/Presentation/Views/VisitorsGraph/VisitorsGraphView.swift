@@ -8,6 +8,14 @@ final class VisitorsGraphView: UIView {
     
     private let disposeBag = DisposeBag()
     var statistic = BehaviorRelay<[VisitorsStatistic]>(value: [])
+    var visitorsPeriod: VisitorsPeriode = .days {
+        didSet {
+            setData(data: prepareViewersData(statistic.value))
+            addConstraints()
+        }
+    }
+    
+    private var graphWidth: CGFloat = 1000
     
     private let chartView = LineChartView()
     private let scrollView = UIScrollView()
@@ -25,14 +33,7 @@ final class VisitorsGraphView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        scrollView.pin.all()
-        containerView.pin.all().height(210).width(1000)
-        chartView.pin
-            .vertically()
-            .horizontally(5)
-            .height(210)
-            .minWidth(1000)
-        scrollView.contentSize = containerView.frame.size
+        addConstraints()
     }
 }
 
@@ -46,6 +47,19 @@ extension VisitorsGraphView {
         
         setupChart()
         bindData()
+    }
+    
+    func addConstraints() {
+        scrollView.pin.all()
+        containerView.pin
+            .all()
+            .height(210)
+            .width(graphWidth)
+        chartView.pin
+            .vertically()
+            .horizontally(5)
+            .height(210)
+        scrollView.contentSize = containerView.frame.size
     }
     
     private func setupChart() {
@@ -145,4 +159,55 @@ extension VisitorsGraphView {
             })
             .disposed(by: disposeBag)
     }
+    
+    func prepareViewersData(_ data: [VisitorsStatistic]) -> [VisitorsStatistic] {
+        switch visitorsPeriod {
+        case .days:
+            graphWidth = 1000
+            return data
+        case .weeks:
+            graphWidth = frame.width
+            return weeklyStatistics(from: data)
+        case .month:
+            graphWidth = frame.width
+            return monthlyStatistics(from: data)
+        }
+    }
+    
+    func weeklyStatistics(from stats: [VisitorsStatistic]) -> [VisitorsStatistic] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: stats) { stat in
+            calendar.component(.weekOfYear, from: stat.date)
+        }
+        let weeklyStats = grouped.map { (weekNumber, items) -> VisitorsStatistic in
+            let totalVisitors = items.reduce(0) { $0 + $1.visitorsCount }
+            let representativeDate = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: items.first!.date))!
+            return VisitorsStatistic(date: representativeDate, visitorsCount: totalVisitors)
+        }
+        return weeklyStats.sorted(by: {$0.date < $1.date})
+    }
+    
+    func monthlyStatistics(from stats: [VisitorsStatistic]) -> [VisitorsStatistic] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: stats) { stat in
+            calendar.dateComponents([.year, .month], from: stat.date)
+        }
+
+        let monthlyStats = grouped.compactMap { (components, items) -> VisitorsStatistic? in
+            guard let year = components.year, let month = components.month else { return nil }
+            
+            let totalVisitors = items.reduce(0) { $0 + $1.visitorsCount }
+            let representativeDate = calendar.date(from: DateComponents(year: year, month: month))!
+            return VisitorsStatistic(date: representativeDate, visitorsCount: totalVisitors)
+        }
+        return monthlyStats
+    }
+
+    
+}
+
+enum VisitorsPeriode {
+    case days
+    case weeks
+    case month
 }
