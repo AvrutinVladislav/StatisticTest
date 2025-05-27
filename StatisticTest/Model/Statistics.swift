@@ -46,7 +46,8 @@ struct UserStatistic: Codable, Equatable, Hashable {
     static func == (lhs: UserStatistic, rhs: UserStatistic) -> Bool {
         return lhs.userId == rhs.userId &&
                 lhs.type == rhs.type &&
-                lhs.dates == rhs.dates
+                lhs.dates == rhs.dates &&
+                lhs.id == rhs.id
     }
 }
 

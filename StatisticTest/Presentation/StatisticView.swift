@@ -13,7 +13,8 @@ final class StatisticView: UIView {
     private let contentView = UIView()
     
     private let visitorsLabel = UILabel()
-    private let visitorsInfoContainerView = ObserversStatistic(UIImage(resource: .topVisitorsGraphDemo), 1356, .riseVisitors, true)
+    private lazy var visitorsInfoView = ObserversStatistic(UIImage(resource: .topVisitorsGraphDemo),
+                                                           .riseVisitors, true, .viewer)
     
     private let periodStackView = UIStackView()
     private let dayPeriodButton = PeriodeButton(isSelected: true, title: "По дням")
@@ -33,8 +34,10 @@ final class StatisticView: UIView {
     
     private let observersTitleLabel = UILabel()
     private let observersView = UIView()
-    private let newObserversView = ObserversStatistic(UIImage(resource: .topVisitorsGraphDemo), 1356, .newObservers, true)
-    private let signedOffObserversview = ObserversStatistic(UIImage(resource: .lowStatistics), 10, .newObservers, false)
+    private lazy var newObserversView = ObserversStatistic(UIImage(resource: .topVisitorsGraphDemo),
+                                                      .newObservers, true, .subs)
+    private lazy var lessObserversview = ObserversStatistic(UIImage(resource: .lowStatistics),
+                                                            .lostObservers, false, .unsubs)
     
     
     override init(frame: CGRect) {
@@ -58,7 +61,8 @@ final class StatisticView: UIView {
                   sexAgeData: Observable<[AgeGroupStats]>,
                   genderCount: BehaviorSubject<GenderCounter>,
                   visitorStatistic: BehaviorRelay<[VisitorsStatistic]>,
-                  mainVisitors: BehaviorRelay<[MainVisitor]>) {
+                  mainVisitors: BehaviorRelay<[MainVisitor]>,
+                  visitersCount: BehaviorRelay<VisitersCounter>) {
         mainVisitors
             .observe(on: MainScheduler.instance)
             .bind(to: mainVisitorsTableView.rx.items(cellIdentifier: MainVisitorsTableViewCell.identifier)) { index, mainVisitor, cell in
@@ -66,12 +70,6 @@ final class StatisticView: UIView {
                 guard let cell = cell as? MainVisitorsTableViewCell else { return }
                 cell.configureCell(model: mainVisitor)
             }
-            .disposed(by: disposeBag)
-        
-        mainVisitorsTableView.rx.modelSelected(User.self)
-            .subscribe(onNext: { user in
-                //метод для обработки нажатия
-            })
             .disposed(by: disposeBag)
         
         sexAgeData
@@ -85,6 +83,13 @@ final class StatisticView: UIView {
         visitorStatistic
             .bind(to: graphView.statistic)
             .disposed(by: disposeBag)
+        
+        for view in [visitorsInfoView, newObserversView, lessObserversview] {
+            visitersCount
+                .bind(to: view.visitorsCounter)
+                .disposed(by: disposeBag)
+        }
+        
     }
     
     func endRefreshing() {
@@ -149,7 +154,7 @@ extension StatisticView {
         scrollView.addSubview(contentView)
         
         contentView.addSubview(visitorsLabel)
-        contentView.addSubview(visitorsInfoContainerView)
+        contentView.addSubview(visitorsInfoView)
         contentView.addSubview(periodStackView)
         contentView.addSubview(graphView)
         contentView.addSubview(mainVisitorsTitleLabel)
@@ -170,7 +175,7 @@ extension StatisticView {
         sexAndAgeTimePeriodScrollView.addSubview(sexAndAgeAllPeriodButton)
         
         observersView.addSubview(newObserversView)
-        observersView.addSubview(signedOffObserversview)
+        observersView.addSubview(lessObserversview)
     }
     
     func addConstraints() {
@@ -184,14 +189,14 @@ extension StatisticView {
             .end(16)
             .sizeToFit(.width)
         
-        visitorsInfoContainerView.pin
+        visitorsInfoView.pin
             .below(of: visitorsLabel)
             .marginTop(12)
             .horizontally(16)
             .height(100)
         
         periodStackView.pin
-            .below(of: visitorsInfoContainerView)
+            .below(of: visitorsInfoView)
             .marginTop(28)
             .horizontally(16)
             .height(32)
@@ -272,7 +277,7 @@ extension StatisticView {
             .horizontally(16)
             .height(100)
         
-        signedOffObserversview.pin
+        lessObserversview.pin
             .below(of: newObserversView)
             .marginTop(2)
             .horizontally(16)

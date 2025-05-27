@@ -1,6 +1,12 @@
 import UIKit
+import RxSwift
+import RxCocoa
 
 final class ObserversStatistic: UIView {
+    
+    private let disposeBag = DisposeBag()
+    
+    var visitorsCounter = BehaviorRelay<VisitersCounter>(value: VisitersCounter())
     
     private let imageView = UIImageView()
     private let countLabel = UILabel()
@@ -8,17 +14,18 @@ final class ObserversStatistic: UIView {
     
     private let isIncreased: Bool
     private var image: UIImage
-    private var count: Int
+    private var count: Int = 0
     private var observersDescription: String
+    private let type: ViewersType
     
     init(_ image: UIImage,
-         _ count: Int,
          _ description: ObserversDescription,
-         _ isIncreased: Bool) {
+         _ isIncreased: Bool,
+         _ type: ViewersType) {
         self.image = image
-        self.count = count
         self.observersDescription = description.rawValue
         self.isIncreased = isIncreased
+        self.type = type
         super.init(frame: .zero)
         setupUI()
     }
@@ -31,12 +38,28 @@ final class ObserversStatistic: UIView {
 extension ObserversStatistic {
     
     func setupUI() {
+        visitorsCounter
+            .asObservable()
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] counter in
+                guard let self else { return }
+                switch self.type {
+                case .viewer:
+                    count = counter.viewers
+                case .subs:
+                    count = counter.newSubs
+                case .unsubs:
+                    count = counter.unsubs
+                }
+                countLabel.attributedText = formatCountWithArrow(count, isIncreased: isIncreased)
+            })
+            .disposed(by: disposeBag)
         backgroundColor = .white
         layer.cornerRadius = 16
         
         imageView.image = image
         
-        countLabel.attributedText = formatCountWithArrow(count, isIncreased: isIncreased)
+        layoutIfNeeded()
         
         descriptionLabel.text = observersDescription
         descriptionLabel.numberOfLines = 0
@@ -50,7 +73,7 @@ extension ObserversStatistic {
         
         imageView.pin
             .vertically(20)
-            .start(16)
+            .start()
             .width(95)
             .height(60)
         
@@ -58,7 +81,7 @@ extension ObserversStatistic {
             .after(of: imageView)
             .top(12)
             .marginStart(20)
-            .end(16)
+            .end()
             .size(.init(width: 100, height: 24))
         
         descriptionLabel.pin
@@ -66,7 +89,7 @@ extension ObserversStatistic {
             .marginStart(20)
             .top(to: countLabel.edge.bottom)
             .marginTop(7)
-            .end(16)
+            .end()
             .bottom(12)
             .minHeight(40)
             .minWidth(200)
@@ -90,4 +113,10 @@ extension ObserversStatistic {
         attributedString.append(arrowString)
         return attributedString
     }
+}
+
+enum ViewersType: CaseIterable {
+    case viewer
+    case subs
+    case unsubs
 }

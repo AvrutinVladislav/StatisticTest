@@ -12,7 +12,7 @@ class StatisticViewController: BaseViewController {
     private var statistic = BehaviorRelay<[UserStatistic]>(value: [])
     private let ageGenderStatistic = BehaviorSubject<[AgeGroupStats]>(value: [])
     private let genderCount = BehaviorSubject<GenderCounter>(value: GenderCounter())
-    private let totalFemales = BehaviorSubject<Int>(value: 0)
+    private let visitersCounter = BehaviorRelay<VisitersCounter>(value: VisitersCounter())
     private let isLoading = BehaviorRelay<Bool>(value: false)
     private let error = PublishSubject<Error>()
     
@@ -47,7 +47,8 @@ extension StatisticViewController {
                                sexAgeData: ageGenderStatistic,
                                genderCount: genderCount,
                                visitorStatistic: visitorsStatistic,
-                               mainVisitors: mainVisitors)
+                               mainVisitors: mainVisitors,
+                               visitersCount: visitersCounter)
         statisticView.onRefresh = { [weak self] in
             self?.loadData()
         }
@@ -132,8 +133,7 @@ extension StatisticViewController {
                    date: date,
                    visitorsCount: dateCounts[date] ?? 0
                )
-           }
-           
+           }           
            return result
     }
     
@@ -150,7 +150,6 @@ extension StatisticViewController {
         var localUsers: [User] = []
         do {
             localUsers = try self.repository.getLocalUsers()
-            print("===== \(localUsers.count) users download from Realm")
         } catch {
             print("==== Error get local users: \(error.localizedDescription)")
         }
@@ -165,16 +164,16 @@ extension StatisticViewController {
                     } catch {
                         print("=== Error to save users to Realm: \(error) ===")
                     }
-                } else {
-                    if self.repository.hasChanges(localUsers: localUsers, remoteUsers: remoteUsers) {
-                        self.updateUserData(with: localUsers)
-                    } else {
-                        self.updateUserData(with: remoteUsers)
-                        do {
-                            try self.repository.updateUsers(remoteUsers)
-                        } catch {
-                            print("==== Error to update users in Realm: \(error)")
-                        }
+                }
+                else if self.repository.hasChanges(localUsers: localUsers, remoteUsers: remoteUsers) {
+                    self.updateUserData(with: remoteUsers)
+                }
+                else {
+                    self.updateUserData(with: localUsers)
+                    do {
+                        try self.repository.updateUsers(remoteUsers)
+                    } catch {
+                        print("==== Error to update users in Realm: \(error)")
                     }
                 }
             }
@@ -195,7 +194,6 @@ extension StatisticViewController {
         var localStatistic = [UserStatistic]()
         do {
             localStatistic = try repository.getLocalStatistic()
-            print("===== \(localStatistic.count) statistics download from Realm")
         } catch {
             print("==== Error get local statistic: \(error.localizedDescription)")
         }
@@ -210,19 +208,18 @@ extension StatisticViewController {
                     } catch {
                         print("==== Error to save statistic to Realm: \(error.localizedDescription)")
                     }
-                } else {
-                    if self.repository.hasChangesStatistic(localStatistics: localStatistic, remoteStatistics: remoteStatistic) {
-                        self.updateStatisticData(with: localStatistic)
-                    } else {
-                        self.updateStatisticData(with: remoteStatistic)
-                        do {
-                            try repository.updateStatistic(remoteStatistic)
-                        } catch {
-                            print("==== Error to update statistic to Realm: \(error.localizedDescription)")
-                        }
+                }
+                else if self.repository.hasChangesStatistic(localStatistics: localStatistic, remoteStatistics: remoteStatistic) {
+                    self.updateStatisticData(with: remoteStatistic)
+                }
+                else {
+                    self.updateStatisticData(with: localStatistic)
+                    do {
+                        try repository.updateStatistic(remoteStatistic)
+                    } catch {
+                        print("==== Error to update statistic to Realm: \(error.localizedDescription)")
                     }
                 }
-                
             }
             .disposed(by: disposeBag)
         self.statisticView.endRefreshing()
@@ -232,14 +229,19 @@ extension StatisticViewController {
         self.statistic.accept(statistic)
         let data = self.processVisitorsData(statistic)
         self.visitorsStatistic.accept(data)
-        let mainVisitors = self.prepareMainVisitersData(with: statistic)
-        self.mainVisitors.accept(mainVisitors)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+            let mainVisitors = self.prepareMainVisitersData(with: statistic)
+            self.mainVisitors.accept(mainVisitors)
+        }
+        let counter = prepareVisitersCounter(with: statistic)
+        visitersCounter.accept(counter)
         self.isLoading.accept(false)
     }
     
-    func prepareMainVisitersData(with statistic: [UserStatistic]) -> [MainVisitor] {
+    func prepareMainVisitersData(with statistics: [UserStatistic]) -> [MainVisitor] {
         var mainVisitors = [MainVisitor]()
-        statistic.forEach { statistic in
+        statistics.forEach { statistic in
             if statistic.type == .view {
                 users.value.forEach { user in
                     if user.id == statistic.userId {
@@ -258,6 +260,21 @@ extension StatisticViewController {
         }
         return mainVisitors.sorted { $0.visitsCount > $1.visitsCount }
     }
-        
+    
+    func prepareVisitersCounter(with statistics: [UserStatistic]) -> VisitersCounter {
+        var result = VisitersCounter()
+        statistics.forEach { statistic in
+            switch statistic.type {
+            case .view:
+                result.viewers += 1
+            case .subscription:
+                result.newSubs += 1
+            case .unsubscription:
+                result.unsubs += 1
+            }
+        }
+        return result
+    }
+    
 }
 
