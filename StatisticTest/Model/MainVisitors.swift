@@ -1,7 +1,8 @@
 import Foundation
 
 struct MainVisitor {
+    let id: Int
     let name: String
-    let visitsCount: Int
+    var visitsCount: Int
     let avatarImg: String?
 }

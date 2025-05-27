@@ -3,8 +3,10 @@ import RxSwift
 import RxCocoa
 
 final class StatisticView: UIView {
-    
+    var onRefresh: (() -> Void)?
     private let disposeBag = DisposeBag()
+    
+    private let refreshControl = UIRefreshControl()
     
     private let topTitleLabel = UILabel()
     private let scrollView = UIScrollView()
@@ -84,6 +86,10 @@ final class StatisticView: UIView {
             .bind(to: graphView.statistic)
             .disposed(by: disposeBag)
     }
+    
+    func endRefreshing() {
+        refreshControl.endRefreshing()
+    }
 }
 
 extension StatisticView {
@@ -91,6 +97,8 @@ extension StatisticView {
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
+        scrollView.refreshControl = refreshControl
+        refreshControl.addTarget(self, action: #selector(refreshPulled), for: .valueChanged)
         
         visitorsLabel.text = "Посетители"
         visitorsLabel.font = .systemFont(ofSize: 20, weight: .bold)
@@ -298,6 +306,10 @@ extension StatisticView {
                 button.isSelectedButton = false
             }
         }
+    }
+    
+    @objc func refreshPulled() {
+        onRefresh?()
     }
    
 }

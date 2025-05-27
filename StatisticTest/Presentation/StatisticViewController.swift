@@ -34,7 +34,7 @@ class StatisticViewController: BaseViewController {
         super.init(nibName: nil, bundle: nil)
     }
     
-    @MainActor required init?(coder: NSCoder) {
+    required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -47,6 +47,9 @@ extension StatisticViewController {
                                genderCount: genderCount,
                                visitorStatistic: visitorsStatistic,
                                mainVisitors: mainVisitors)
+        statisticView.onRefresh = { [weak self] in
+            self?.loadData()
+        }
     }
     
     override func addSubviews() {
@@ -76,24 +79,6 @@ extension StatisticViewController {
         isLoading.accept(true)
         fetchUsers()
         fetchStatistic()
-//        networkProvider.fetchStatistics()
-//            .observe(on: MainScheduler.instance)
-//            .subscribe(
-//                onNext: { [weak self] statistic in
-//                    guard let self else { return }
-//                    self.statistic.accept(statistic.statistics)
-//                    let mainVisitors = self.prepareMainVisitersData()
-//                    self.mainVisitors.accept(mainVisitors)
-//                    let data = self.processVisitorsData(statistic)
-//                    self.visitorsStatistic.accept(data)
-//                    self.isLoading.accept(false)
-//                },
-//                onError: { [weak self] error in
-//                    self?.error.onNext(error)
-//                    self?.isLoading.accept(false)
-//                }
-//            )
-//            .disposed(by: disposeBag)
     }
     
     func groupByAgeAndGender(users: [User]) -> [AgeGroupStats] {
@@ -123,19 +108,6 @@ extension StatisticViewController {
     }
     
     func processVisitorsData(_ data: [UserStatistic]) -> [VisitorsStatistic] {
-//        let allViewDates = response.statistics
-//            .filter { $0.type.rawValue == "view" }
-//            .flatMap { $0.dates }
-//        
-//        let dates = allViewDates.compactMap { parseDate(from: $0) }
-//        
-//        var dateCounts = [Date: Int]()
-//        for date in dates {
-//            dateCounts[date] = (dateCounts[date] ?? 0) + 1
-//        }
-//        return dateCounts
-//            .sorted { $0.key < $1.key}
-//            .map {VisitorsStatistic(date: $0.key, visitorsCount: $0.value)}
            let allViewDates = data
                .filter { $0.type.rawValue == "view" }
                .flatMap { $0.dates }
@@ -206,6 +178,7 @@ extension StatisticViewController {
                 }
             }
             .disposed(by: disposeBag)
+        self.statisticView.endRefreshing()
     }
     
     private func updateUserData(with users: [User]) {
@@ -251,14 +224,15 @@ extension StatisticViewController {
                 
             }
             .disposed(by: disposeBag)
+        self.statisticView.endRefreshing()
     }
     
     func updateStatisticData(with statistic: [UserStatistic]) {
         self.statistic.accept(statistic)
-        let mainVisitors = self.prepareMainVisitersData(with: statistic)
-        self.mainVisitors.accept(mainVisitors)
         let data = self.processVisitorsData(statistic)
         self.visitorsStatistic.accept(data)
+        let mainVisitors = self.prepareMainVisitersData(with: statistic)
+        self.mainVisitors.accept(mainVisitors)
         self.isLoading.accept(false)
     }
     
@@ -268,14 +242,19 @@ extension StatisticViewController {
             if statistic.type == .view {
                 users.value.forEach { user in
                     if user.id == statistic.userId {
-                        mainVisitors.append(MainVisitor(name: user.username,
-                                                        visitsCount: statistic.dates.count,
-                                                        avatarImg: user.files.first?.url))
+                        if mainVisitors.contains(where: {$0.id == user.id}),
+                           let index = mainVisitors.firstIndex(where: {$0.id == user.id}) {
+                            mainVisitors[index].visitsCount += statistic.dates.count
+                        } else {
+                            mainVisitors.append(MainVisitor(id: user.id,
+                                                            name: user.username,
+                                                            visitsCount: statistic.dates.count,
+                                                            avatarImg: user.files.first?.url))
+                        }
                     }
                 }
             }
         }
-        
         return mainVisitors.sorted { $0.visitsCount > $1.visitsCount }
     }
         
