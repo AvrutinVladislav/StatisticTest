@@ -30,7 +30,7 @@ class BarChartView: UIView {
         addSubview(progressBar)
 
         percentageLabel.text = "\(Int(percentage ?? 0))%"
-        percentageLabel.font = UIFont.systemFont(ofSize: 10)
+        percentageLabel.font = Fonts.medium.font(size: 10)
         percentageLabel.textColor = .black
         addSubview(percentageLabel)
     }

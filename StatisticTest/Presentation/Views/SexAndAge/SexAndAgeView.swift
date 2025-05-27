@@ -69,6 +69,10 @@ extension SexAndAgeView {
         womanLabel.text = "Женщины"
         womanPersentsLabel.text = "\(womanPersents)%"
         
+        for label in [manLabel, manPersentsLabel, womanLabel, womanPersentsLabel] {
+            label.font = Fonts.medium.font(size: 13)
+        }
+        
         sexAndAgeTableView.register(SexAndAgeTableViewCell.self,
                                     forCellReuseIdentifier: SexAndAgeTableViewCell.identifire)
         sexAndAgeTableView.separatorStyle = .none

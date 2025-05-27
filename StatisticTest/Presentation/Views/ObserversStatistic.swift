@@ -64,7 +64,7 @@ extension ObserversStatistic {
         descriptionLabel.text = observersDescription
         descriptionLabel.numberOfLines = 0
         descriptionLabel.lineBreakMode = .byWordWrapping
-        descriptionLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        descriptionLabel.font = Fonts.medium.font(size: 15)
         descriptionLabel.textColor = UIColor(.black.opacity(0.5))
         
         addSubview(imageView)
@@ -101,12 +101,12 @@ extension ObserversStatistic {
         let color = isIncreased ? UIColor.systemGreen : UIColor.systemRed
         let attributedString = NSMutableAttributedString(
             string: "\(count) ",
-            attributes: [.font: UIFont.systemFont(ofSize: 20, weight: .bold)]
+            attributes: [.font: Fonts.bold.font(size: 20)]
         )
         let arrowString = NSAttributedString(
             string: arrow,
             attributes: [
-                .font: UIFont.systemFont(ofSize: 20, weight: .bold),
+                .font: Fonts.bold.font(size: 20),
                 .foregroundColor: color,
             ]
         )

@@ -36,7 +36,7 @@ class PeriodeButton: UIButton {
         config.background.strokeWidth = isSelectedButton ? 0 : 1
         
         var titleAtr = AttributeContainer()
-        titleAtr.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+        titleAtr.font = Fonts.semiBold.font(size: 15)
         config.attributedTitle = AttributedString(title, attributes: titleAtr)
         configuration = config
     }

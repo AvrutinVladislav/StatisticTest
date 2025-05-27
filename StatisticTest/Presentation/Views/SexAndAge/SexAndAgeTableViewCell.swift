@@ -42,7 +42,7 @@ final class SexAndAgeTableViewCell: UITableViewCell {
 
 extension SexAndAgeTableViewCell {
     func setupUI() {
-        ageLabel.font = .boldSystemFont(ofSize: 18)
+        ageLabel.font = Fonts.semiBold.font(size: 15)
 
     }
     

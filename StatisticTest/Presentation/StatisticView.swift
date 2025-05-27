@@ -53,8 +53,7 @@ final class StatisticView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         addConstraints()
-        mainVisitorsTitleLabel.font = .systemFont(ofSize: mainVisitorsTitleLabel.frame.width > 359 ? 20 : 18
-                                                  , weight: .bold)
+        mainVisitorsTitleLabel.font = Fonts.bold.font(size: mainVisitorsTitleLabel.frame.width > 359 ? 20 : 18)
     }
     
     func bindData(users: Observable<[User]>,
@@ -124,6 +123,7 @@ extension StatisticView {
         }
         
         mainVisitorsTitleLabel.text = "Чаще всего посещают Ваш профиль"
+        mainVisitorsTitleLabel.font = Fonts.bold.font(size: 20)
         
         mainVisitorsTableView.register(MainVisitorsTableViewCell.self,
                                        forCellReuseIdentifier: MainVisitorsTableViewCell.identifier)
@@ -132,7 +132,7 @@ extension StatisticView {
         mainVisitorsTableView.layer.cornerRadius = 14
         
         sexAndAgeTitleLabel.text = "Пол и возраст"
-        sexAndAgeTitleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        sexAndAgeTitleLabel.font = Fonts.bold.font(size: 20)
         
         sexAndAgeTimePeriodScrollView.showsHorizontalScrollIndicator = false
         sexAndAgeTimePeriodScrollView.showsVerticalScrollIndicator = false
@@ -145,7 +145,7 @@ extension StatisticView {
         observersView.layer.cornerRadius = 14
         
         observersTitleLabel.text = "Наблюдатели"
-        observersTitleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        observersTitleLabel.font = Fonts.bold.font(size: 20)
     }
     
     func addSubviews() {

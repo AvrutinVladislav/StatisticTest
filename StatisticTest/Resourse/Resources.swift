@@ -8,6 +8,16 @@ enum ObserversDescription: String, CaseIterable {
     case lowVisitors = "Количество посетителей в этом месяце уменьшилось"
 }
 
+enum Fonts: String, CaseIterable {
+    case medium = "Gilroy-Medium"
+    case semiBold = "Gilroy-SemiBold"
+    case bold = "Gilroy-Bold"
+    
+    func font(size: CGFloat) -> UIFont {
+            return UIFont(name: self.rawValue, size: size) ?? .systemFont(ofSize: size)
+        }
+}
+
 enum Colors: CaseIterable {
     static let mainBackground = Colors.color(light: .init(hex: .mainBackground), dark: .init(hex: .mainBackground))
     static let tabbarBorder = Colors.color(light: .init(hex: .tabbarBorder), dark: .init(hex: .tabbarBorder))

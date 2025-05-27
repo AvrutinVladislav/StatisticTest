@@ -67,7 +67,7 @@ extension StatisticViewController {
     func configureNavigationBarTitle() {
         let titleLabel = UILabel()
         titleLabel.text = "Статистика"
-        titleLabel.font = UIFont.boldSystemFont(ofSize: 32)
+        titleLabel.font = Fonts.bold.font(size: 32)
         titleLabel.sizeToFit()
         
         let titleItem = UIBarButtonItem(customView: titleLabel)

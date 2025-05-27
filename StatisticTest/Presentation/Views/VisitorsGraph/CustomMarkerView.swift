@@ -47,6 +47,8 @@ class CustomMarkerView: MarkerView {
             }
         }
         label.text = "\(Int(entry.y)) посетителей"
+        label.font = Fonts.semiBold.font(size: 15)
+        dateLabel.font = Fonts.medium.font(size: 13)
         layoutIfNeeded()
     }
 
@@ -58,34 +60,29 @@ class CustomMarkerView: MarkerView {
     }
 
     override func offsetForDrawing(atPoint point: CGPoint) -> CGPoint {
-//        let markerHeight = bounds.height
-//        let yAbove = point.y - markerHeight - 8
-//        let yOffset = (yAbove > 0) ? -markerHeight - 8 : 8
-//        
-//        return CGPoint(x: -bounds.width / 2, y: yOffset)
         let markerSize = bounds.size
-            let markerWidth = markerSize.width
-            let markerHeight = markerSize.height
-
-            let screenBounds = UIScreen.main.bounds
-            let screenWidth = screenBounds.width
-
-            let yAbove = point.y - markerHeight - 8
-            let yOffset = (yAbove > 0) ? -markerHeight - 8 : 8
-            
-            var xOffset: CGFloat = -markerWidth / 2
-            
-            let leftEdge = point.x + xOffset
-            if leftEdge < 16 {
-                xOffset = -(point.x - 16)
-            }
-            
-            let rightEdge = point.x + xOffset + markerWidth
-            if rightEdge > screenWidth - 60 {
-                xOffset = screenWidth - 60 - point.x - markerWidth
-            }
-            
-            return CGPoint(x: xOffset, y: yOffset)
+        let markerWidth = markerSize.width
+        let markerHeight = markerSize.height
+        
+        let screenBounds = UIScreen.main.bounds
+        let screenWidth = screenBounds.width
+        
+        let yAbove = point.y - markerHeight - 8
+        let yOffset = (yAbove > 0) ? -markerHeight - 8 : 8
+        
+        var xOffset: CGFloat = -markerWidth / 2
+        
+        let leftEdge = point.x + xOffset
+        if leftEdge < 16 {
+            xOffset = -(point.x - 16)
+        }
+        
+        let rightEdge = point.x + xOffset + markerWidth
+        if rightEdge > screenWidth - 60 {
+            xOffset = screenWidth - 60 - point.x - markerWidth
+        }
+        
+        return CGPoint(x: xOffset, y: yOffset)
     }
     
     private func convertDate(_ date: String) -> String {
