@@ -1,6 +1,6 @@
 import RealmSwift
 
-final class Repository: RepositoryProtocol {
+final public class Repository: RepositoryProtocol {
     
     private let realmProvider: RealmProviderProtocol
     

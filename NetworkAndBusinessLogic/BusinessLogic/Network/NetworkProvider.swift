@@ -2,7 +2,7 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-final class NetworkProvider: NetworkProviderProtocol {
+final public class NetworkProvider: NetworkProviderProtocol {
         
     func fetchUsers() -> Observable<[User]> {
         guard let url = URL(string: "http://test.rikmasters.ru/api/users/") else {
